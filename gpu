@@ -1,0 +1,31 @@
+#!/bin/bash
+
+GPU="0000:03:00.0"
+GPU_AUDIO="0000:03:00.1"
+GPU_DRIVER="amdgpu"
+GPU_AUDIO_DRIVER="snd_hda_intel"
+VFIO_DRIVER="vfio-pci"
+
+function bind_vfio {
+  echo 0 |sudo tee /sys/bus/pci/devices/${GPU}/d3cold_allowed
+  echo $GPU | sudo tee /sys/bus/pci/drivers/${GPU_DRIVER}/unbind /sys/bus/pci/drivers/${VFIO_DRIVER}/bind
+  echo $GPU_AUDIO | sudo tee /sys/bus/pci/drivers/${GPU_AUDIO_DRIVER}/unbind /sys/bus/pci/drivers/${VFIO_DRIVER}/bind
+}
+
+function unbind_vfio {
+  echo $GPU | sudo tee /sys/bus/pci/drivers/${VFIO_DRIVER}/unbind /sys/bus/pci/drivers/${GPU_DRIVER}/bind
+  echo $GPU_AUDIO | sudo tee /sys/bus/pci/drivers/${VFIO_DRIVER}/unbind /sys/bus/pci/drivers/${GPU_AUDIO_DRIVER}/bind
+}
+
+case $1 in
+  bind)
+    bind_vfio
+    ;;
+  unbind)
+    unbind_vfio
+    ;;
+  *)
+    echo "Usage: $0 {bind|unbind}"
+    exit 1
+    ;;
+esac
